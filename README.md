@@ -60,9 +60,11 @@
 
 <span style="color:#808080"> 대화문 데이터 오류는 [여기](https://fish-target-b61.notion.site/NLP-Competition-5a07a68bee894418a559a2dcc2f238f0)를 참조해주세요. </span>
 
+<br>
+
 ### 🔍 데이터 전처리
  
-데이터 오류 정리본은 다음과 같은 과정을 통해 정제하였다.
+- 데이터 오류 정리본은 다음과 같은 과정을 통해 정제하였다.
 
 ```python
 
@@ -80,7 +82,7 @@ df['dialogue'] = df['dialogue'].str.replace('#', '#Person1#:')
 ...
 ```
 
-데이터셋이 일상대화를 담은 만큼 개인정보가 포함되어 있어 이를 마스킹하여 제공되었다. 대화문 및 요약문에서 마스킹된 값들을 tokenizer에 special token으로 포함시켰다. <br>
+- 데이터셋이 일상대화를 담은 만큼 개인정보가 포함되어 있어 이를 마스킹하여 제공되었다. 따라서, 대화문 및 요약문에서 마스킹된 값들을 tokenizer에 special token으로 포함시켰다. <br>
 
 ```python
 
@@ -93,12 +95,15 @@ special_tokens = ['#PassportNumber#', '#CardNumber#', '#Person3#', '#DateOfBirth
 
 ### 🧠 모델링
 
- - 📐 평가지표
+ - 📐 평가지표 : Rouge F1 Score
 
-
+ ![image](https://github.com/user-attachments/assets/1fcc8604-3222-4d86-b78e-c52a5f41eee3)
 
  - **모델 구성**
 
+   - **프롬프트**
+
+   - 
 
 
 ## 🎯 결과 및 기대효과
