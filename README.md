@@ -99,12 +99,110 @@ special_tokens = ['#PassportNumber#', '#CardNumber#', '#Person3#', '#DateOfBirth
 
  ![image](https://github.com/user-attachments/assets/1fcc8604-3222-4d86-b78e-c52a5f41eee3)
 
+ - **프롬프트**
+
+   - 인코더 모델 `BERT` : 입력 텍스트 중심의 task 정의, \<s> 토큰으로 시작과 종료를 알린다.
+  
+      ```python
+      def train_prompt_roberta(row):
+
+        topic = row['topic'] if 'topic' in row else ''
+
+        prompt = f"""<s> 다음의 대화를 요약하세요. 아래의 지침을 따르세요:
+
+        1. 대화 길이의 20% 이내로 요약
+        2. 대화 내에서 중요하게 명명된 개체의 이름을 그대로 사용
+        3. 은어나 약어 없이 공식적으로 사용하는 언어로 작성
+
+        주제: {topic}
+        대화: {row['dialogue']}
+        요약: {row['summary']} </s>"""
+
+        return prompt
+      ```
+
+   - 디코더 모델 `LLaMA` : 시스템 메세지 및 어시스턴트 응답을 활용하여 명확히 구분한다.
+
+      ```python
+      def train_prompt_llama(row):
+          topic = row['topic'] if 'topic' in row else ''
+
+          prompt = f"""<s> <|im_start|>system
+          주제를 참고해 다음 대화를 요약하세요. 아래의 지침을 따르세요:
+
+          1. 대화 길이의 20% 이내로 요약
+          2. 대화 내에서 중요하게 명명된 개체의 이름을 그대로 사용
+          3. 은어나 약어 없이 공식적으로 사용하는 언어로 작성
+
+          주제: {topic}
+          대화: {row['dialogue']}
+          <|im_end|>
+          <|im_start|>assistant
+          요약: {row['summary']}
+          <|im_end|> </s>"""
+
+          return prompt
+      ```
+
+   - 인코더-디코더 모델 `T5` : task 이름을 명시적으로 포함하고, Seq2Seq 형식으로 작성한다.
+
+      ```python
+      def train_prompt_t5(row):
+          topic = row['topic'] if 'topic' in row else ''
+
+          prompt = f"""summarize dialogue:
+          topic: {topic}
+          dialogue: {row['dialogue']}
+
+          summary: {row['summary']}"""
+
+          return prompt
+      ```
+
  - **모델 구성**
 
-   - **프롬프트**
+    사전 학습에 한국어 데이터셋을 사용한 모델들을 불러와 fine-tuning을 진행하였다. <br>
 
-   - 
+    | 모델 `BERT`                   | Score     | ROUGE-1     | ROUGE-2     | ROUGE-L      |
+    |:----------------------------:|:---------:|:-----------:|:-----------:|:------------:|
+    | kykim/bert-kor-base          | Public    | 0.4331      | 0.2866      | 0.3375       |
+    |                              | Private   | 0.4009      | 0.2738      | 0.3001       |
 
+    | 모델 `LLaMA`               | Score     | ROUGE-1     | ROUGE-2     | ROUGE-L      |
+    |:-------------------------:|:---------:|:-----------:|:-----------:|:------------:|
+    | beomi/Llama-3-Open-Ko-8B  | Public    | 0.4956      | 0.3072      | 0.4094       |
+    |                           | Private   | 0.5021      | 0.3014      | 0.4112       |
+
+    | 모델 `T5`                               | Score          | ROUGE-1     | ROUGE-2     | ROUGE-L      |
+    |:--------------------------------------:|:--------------:|:-----------:|:-----------:|:------------:|
+    | eenzeenee/t5-base-korean-summarization | Public         | 0.4769      | 0.2755      | 0.3949       |
+    |                                        | Private        | 0.4755      | 0.2637      | 0.3836       |
+
+    | 모델 `T5`                           | Score          | ROUGE-1     | ROUGE-2     | ROUGE-L      |
+    |:----------------------------------:|:--------------:|:-----------:|:-----------:|:------------:|
+    | lcw99/t5-large-korean-text-summary | Public         | 0.5340      | 0.3350      | 0.4397       |
+    |                                    | Private        | 0.5173      | 0.3024      | 0.4155       |
+
+<br>
 
 ## 🎯 결과 및 기대효과
 
+### 결과 요약
+
+  - 본 프로젝트는 **Summarization**을 목표로 진행되었으며, Transformer의 인코더, 디코더, 인코더-디코더 구조 모델을 비교 평가하였다.
+
+  - LLaMA 모델보다 적은 파라미터를 가진 T5 모델이 가장 높은 지표를 보여주며, 대화 요약 작업에서 인코더-디코더 구조의 강점을 입증하였다.
+
+### 기대효과
+
+  - **응용 가능성**: 대화 요약 기술은 고객 상담 요약, 의료 기록 요약, 회의록 작성 등의 다양한 분야에 적용 가능하다.
+
+  - **지속적인 개선 여지**: 성능 한계를 보완하기 위한 데이터 증강, 파인튜닝, 하이퍼파라미터 조정을 통해 성능을 더욱 높일 가능성이 존재한다.
+
+### 한계점 및 아쉬운 점
+
+1. **데이터 정제**  
+   - 영문 데이터를 단순히 한국어로 번역하였기에, 다소 어색한 번역체로 구성되어있는 데이터셋이였다. 이를 해결하여 더 좋은 데이터로 모델을 학습시킬 수 있었는데, 시간 상의 이유로 못한 것이 아쉽다.
+
+2. **자원 제약 내에서의 효율성 부족**  
+   - 경계선을 잘 정하여 그에 맞는 모델을 실험했어야 했는데, 그것이 잘 안되어 엄청난 시간 낭비로 이어졌다. 제한된 환경에 맞게 최선의 모델을 채택하고, 최선의 성능을 끌어올리는 것이 중요한 역량이라는 것을 깨닫는 시간이었다.
